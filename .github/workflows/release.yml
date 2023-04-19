@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: write
+
+    env:
+      COSIGN_YES: "true"
+
+    steps:
+      - name: Check out code onto GOPATH
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+
+      - uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
+        with:
+          go-version: '1.20'
+          check-latest: true
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@9e9de2292db7abb3f51b7f4808d98f0d347a8919 # v3.0.2
+
+      - name: Install bom
+        uses: puerco/release-actions/setup-bom@6c88cda6495b4415966e61f20798fb96a9081397 # main
+
+      - name: Install GoReleaser
+        uses: goreleaser/goreleaser-action@f82d6c1c344bcacabba2c841718984797f664a6b # v4.2.0
+        with:
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  attestation:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: write
+
+    needs:
+      - release
+
+    steps:
+      - name: Check out code onto GOPATH
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+
+      - name: Set tag output
+        id: tag
+        run: echo "tag_name=${GITHUB_REF#refs/*/}" >> "$GITHUB_OUTPUT"
+
+      - name: Install tejolote
+        uses: puerco/release-actions/setup-tejolote@6c88cda6495b4415966e61f20798fb96a9081397 # main
+
+      - run: |
+          tejolote attest --artifacts github://cpanato/kubeconeu2023-release-tools-example/${{ steps.tag.outputs.tag_name }} github://cpanato/kubeconeu2023-release-tools-example/"${GITHUB_RUN_ID}" --output example.intoto.json --sign
+
+      - name: Release
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v0.1.15
+        with:
+          files: example.intoto.json
+          tag_name: "${{ steps.tag.outputs.tag_name }}"
+          token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_REPOSITORY: cpanato/kubeconeu2023-release-tools-example

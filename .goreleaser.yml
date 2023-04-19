@@ -1,0 +1,95 @@
+project_name: kubeconeu2023-release-tools-example
+
+env:
+  - GO111MODULE=on
+  - CGO_ENABLED=0
+  - COSIGN_YES=true
+
+before:
+  hooks:
+    - go mod tidy
+    - /bin/bash -c 'if [ -n "$(git --no-pager diff --exit-code go.mod go.sum)" ]; then exit 1; fi'
+
+gomod:
+  proxy: true
+
+builds:
+  - id: example
+    main: .
+    no_unique_dist_dir: true
+    binary: example-{{ .Arch }}-{{ .Os }}
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+      - arm
+      - s390x
+      - ppc64le
+    goarm:
+      - '7'
+    ignore:
+      - goos: windows
+        goarch: arm64
+      - goos: windows
+        goarch: arm
+      - goos: windows
+        goarch: s390x
+      - goos: windows
+        goarch: ppc64le
+    flags:
+      - -trimpath
+
+archives:
+  - format: binary
+    name_template: example-{{ .Arch }}-{{ .Os }}
+    allow_different_binary_count: true
+
+signs:
+  # Keyless
+  - id: example-keyless
+    signature: "${artifact}.sig"
+    certificate: "${artifact}.pem"
+    cmd: cosign
+    args:
+      - "sign-blob"
+      - "--output-signature"
+      - "${artifact}.sig"
+      - "--output-certificate"
+      - "${artifact}.pem"
+      - "${artifact}"
+    artifacts: all
+
+sboms:
+  - id: example
+    cmd: bom
+    args:
+      - generate
+      - "--output"
+      - "example.json.spdx"
+      - "-d"
+      - "../"
+      - "-c"
+      - "../.bom-config.yaml"
+      - "--format"
+      - "json"
+    artifacts: any
+    documents:
+      - "example.json.spdx"
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+release:
+  github:
+    owner: cpanato
+    name: kubeconeu2023-release-tools-example
+  prerelease: auto
+
+changelog:
+  skip: true

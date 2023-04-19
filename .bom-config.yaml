@@ -1,0 +1,48 @@
+---
+namespace: https://cpanato/example
+license: Apache-2.0
+name: example
+creator:
+ person: The Kubernetes Authors
+ tool: example
+
+artifacts:
+  - type: file
+    source: example-amd64-windows.exe
+    license: Apache-2.0
+    gomodules: true
+
+  - type: file
+    source: example-amd64-darwin
+    license: Apache-2.0
+    gomodules: true
+
+  - type: file
+    source: example-amd64-linux
+    license: Apache-2.0
+    gomodules: true
+
+  - type: file
+    source: example-arm-linux
+    license: Apache-2.0
+    gomodules: true
+
+  - type: file
+    source: example-arm64-darwin
+    license: Apache-2.0
+    gomodules: true
+
+  - type: file
+    source: example-arm64-linux
+    license: Apache-2.0
+    gomodules: true
+
+  - type: file
+    source: example-ppc64le-linux
+    license: Apache-2.0
+    gomodules: true
+
+  - type: file
+    source: example-s390x-linux
+    license: Apache-2.0
+    gomodules: true

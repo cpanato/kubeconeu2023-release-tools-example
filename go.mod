@@ -1,4 +1,4 @@
-module github.com/puerco/hello
+module github.com/cpanato/kubeconeu2023-release-tools-example
 
 go 1.19
 
